@@ -1,4 +1,7 @@
-include .env
+ifneq (,$(wildcard ./.env))
+    include .env
+    export
+endif
 
 .PHONY: help postgres postgres-down clean seed
 

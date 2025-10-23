@@ -5,7 +5,6 @@ GO
 -- Clubs (Vertical MIOD) - operational/source tables
 IF OBJECT_ID('day8_src.Clubs_Orchestra') IS NOT NULL DROP TABLE day8_src.Clubs_Orchestra;
 CREATE TABLE day8_src.Clubs_Orchestra (
-  ClubID INT,
   ClubName NVARCHAR(100),
   [Year] INT,
   TotalIncome DECIMAL(12,2),
@@ -14,7 +13,6 @@ CREATE TABLE day8_src.Clubs_Orchestra (
 
 IF OBJECT_ID('day8_src.Clubs_Business') IS NOT NULL DROP TABLE day8_src.Clubs_Business;
 CREATE TABLE day8_src.Clubs_Business (
-  ClubID INT,
   ClubName NVARCHAR(100),
   [Year] INT,
   TotalIncome DECIMAL(12,2),
@@ -23,7 +21,6 @@ CREATE TABLE day8_src.Clubs_Business (
 
 IF OBJECT_ID('day8_src.Clubs_Japanese') IS NOT NULL DROP TABLE day8_src.Clubs_Japanese;
 CREATE TABLE day8_src.Clubs_Japanese (
-  ClubID INT,
   ClubName NVARCHAR(100),
   [Year] INT,
   TotalIncome DECIMAL(12,2),

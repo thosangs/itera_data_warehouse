@@ -3,11 +3,10 @@ ifneq (,$(wildcard ./.env))
     export
 endif
 
-.PHONY: help postgres postgres-down clean seed
-
-help:
+.PHONY: help
+help: ## Show this help
 	@echo "Commands:"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@grep -hE '^[a-zA-Z0-9_-]+:.*## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 setup: ## Create .env with defaults if missing
 	@echo "Preparing .env..."

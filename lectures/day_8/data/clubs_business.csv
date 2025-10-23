@@ -1,3 +1,3 @@
-ClubID,ClubName,Year,TotalIncome,TotalExpenditure
-2,Business,2023,38000,35000
-2, Business,2024,42000,37000
+ClubName,Year,TotalIncome,TotalExpenditure
+Business,2023,38000,35000
+Business,2024,42000,37000

@@ -3,11 +3,11 @@
 IF OBJECT_ID('day8_dwh.Fact_Clubs') IS NOT NULL DROP VIEW day8_dwh.Fact_Clubs;
 GO
 CREATE VIEW day8_dwh.Fact_Clubs AS
-SELECT ClubID, ClubName, [Year], TotalIncome, TotalExpenditure FROM day8_src.Clubs_Orchestra
+SELECT 1 AS ClubID, ClubName, [Year], TotalIncome, TotalExpenditure FROM day8_src.Clubs_Orchestra
 UNION ALL
-SELECT ClubID, ClubName, [Year], TotalIncome, TotalExpenditure FROM day8_src.Clubs_Business
+SELECT 2 AS ClubID, ClubName, [Year], TotalIncome, TotalExpenditure FROM day8_src.Clubs_Business
 UNION ALL
-SELECT ClubID, ClubName, [Year], TotalIncome, TotalExpenditure FROM day8_src.Clubs_Japanese;
+SELECT 3 AS ClubID, ClubName, [Year], TotalIncome, TotalExpenditure FROM day8_src.Clubs_Japanese;
 GO
 
 -- Level-1: add calculated measures and keep Club, Year as dims

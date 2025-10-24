@@ -1,0 +1,1 @@
+python3 generate_data.py --n 1000

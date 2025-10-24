@@ -1,7 +1,7 @@
 -- Clubs (Vertical MIOD)
 SELECT TOP 10 * FROM day8_dwh.Fact_Clubs;
-SELECT TOP 10 * FROM day8_dwh.Fact_Clubs_L1;
-SELECT TOP 10 * FROM day8_dwh.Fact_Clubs_L2;
+SELECT TOP 10 * FROM day8_dwh.Fact_Clubs_L1 ORDER BY [Year] DESC, [Month] DESC;
+SELECT TOP 10 * FROM day8_dwh.Fact_Clubs_L2 ORDER BY [Year] DESC;
 
 -- Property (Horizontal MIOD)
 SELECT TOP 10 * FROM day8_dwh.Fact_Property;

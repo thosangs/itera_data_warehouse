@@ -5,17 +5,17 @@ DECLARE @file NVARCHAR(4000);
 
 TRUNCATE TABLE day8_src.Clubs_Orchestra;
 SET @file = @base + N'/clubs_orchestra.csv';
-SET @sql = N'BULK INSERT day8_src.Clubs_Orchestra FROM ''' + REPLACE(@file, '''', '''''') + N''' WITH (FIRSTROW=2, FIELDTERMINATOR='','', ROWTERMINATOR=''\n'');';
+SET @sql = N'BULK INSERT day8_src.Clubs_Orchestra FROM ''' + REPLACE(@file, '''', '''''') + N''' WITH (FIRSTROW=2, FIELDTERMINATOR='','', ROWTERMINATOR=''\n'', TABLOCK);';
 EXEC sys.sp_executesql @sql;
 
 TRUNCATE TABLE day8_src.Clubs_Business;
 SET @file = @base + N'/clubs_business.csv';
-SET @sql = N'BULK INSERT day8_src.Clubs_Business FROM ''' + REPLACE(@file, '''', '''''') + N''' WITH (FIRSTROW=2, FIELDTERMINATOR='','', ROWTERMINATOR=''\n'');';
+SET @sql = N'BULK INSERT day8_src.Clubs_Business FROM ''' + REPLACE(@file, '''', '''''') + N''' WITH (FIRSTROW=2, FIELDTERMINATOR='','', ROWTERMINATOR=''\n'', TABLOCK);';
 EXEC sys.sp_executesql @sql;
 
 TRUNCATE TABLE day8_src.Clubs_Japanese;
 SET @file = @base + N'/clubs_japanese.csv';
-SET @sql = N'BULK INSERT day8_src.Clubs_Japanese FROM ''' + REPLACE(@file, '''', '''''') + N''' WITH (FIRSTROW=2, FIELDTERMINATOR='','', ROWTERMINATOR=''\n'');';
+SET @sql = N'BULK INSERT day8_src.Clubs_Japanese FROM ''' + REPLACE(@file, '''', '''''') + N''' WITH (FIRSTROW=2, FIELDTERMINATOR='','', ROWTERMINATOR=''\n'', TABLOCK);';
 EXEC sys.sp_executesql @sql;
 
 TRUNCATE TABLE day8_src.Property_Inspection;

@@ -8,7 +8,7 @@
   packages = [
     pkgs.gnumake
     pkgs.docker-compose
-    # pkgs.python311
+    pkgs.python311
     # pkgs.python311Packages.pip
     # pkgs.nodejs_20
     # pkgs.nodePackages.nodemon

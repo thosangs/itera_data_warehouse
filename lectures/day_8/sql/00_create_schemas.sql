@@ -7,6 +7,8 @@ IF OBJECT_ID('day8_src.Clubs_Orchestra') IS NOT NULL DROP TABLE day8_src.Clubs_O
 CREATE TABLE day8_src.Clubs_Orchestra (
   ClubName NVARCHAR(100),
   [Year] INT,
+  [Month] DATE,
+  [Date] DATE,
   TotalIncome DECIMAL(12,2),
   TotalExpenditure DECIMAL(12,2)
 );
@@ -15,6 +17,8 @@ IF OBJECT_ID('day8_src.Clubs_Business') IS NOT NULL DROP TABLE day8_src.Clubs_Bu
 CREATE TABLE day8_src.Clubs_Business (
   ClubName NVARCHAR(100),
   [Year] INT,
+  [Month] DATE,
+  [Date] DATE,
   TotalIncome DECIMAL(12,2),
   TotalExpenditure DECIMAL(12,2)
 );
@@ -23,6 +27,8 @@ IF OBJECT_ID('day8_src.Clubs_Japanese') IS NOT NULL DROP TABLE day8_src.Clubs_Ja
 CREATE TABLE day8_src.Clubs_Japanese (
   ClubName NVARCHAR(100),
   [Year] INT,
+  [Month] DATE,
+  [Date] DATE,
   TotalIncome DECIMAL(12,2),
   TotalExpenditure DECIMAL(12,2)
 );

@@ -22,6 +22,19 @@ if [[ -z "${SA_PASSWORD:-}" || -z "${DB_NAME:-}" ]]; then
   exit 1
 fi
 
+# Run optional init script for the target day on the host (e.g., generate data)
+LECTURE_DIR="$REPO_ROOT/lectures/day_${DAY}"
+INIT_SCRIPT="$LECTURE_DIR/scripts/init.sh"
+if [[ -f "$INIT_SCRIPT" ]]; then
+  echo "Running init script: $INIT_SCRIPT"
+  (
+    cd "$(dirname "$INIT_SCRIPT")"
+    bash "$(basename "$INIT_SCRIPT")"
+  )
+else
+  echo "No init script found at $INIT_SCRIPT; skipping."
+fi
+
 SQL_DIR="/opt/workspace/lectures/day_${DAY}/sql"
 
 docker exec -e SA_PASSWORD="$SA_PASSWORD" -e DB_NAME="$DB_NAME" -e SQL_DIR="$SQL_DIR" mssql /bin/bash -lc '

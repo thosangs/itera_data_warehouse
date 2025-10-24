@@ -1,2 +1,3 @@
 .env
+lectures/*/data/**/*.csv
 lectures/*/data/*.csv

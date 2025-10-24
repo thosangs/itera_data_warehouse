@@ -28,13 +28,21 @@ Make sure you have the following installed:
    - `DB_NAME`: target database name (default: `PracticeDB`)
    - `SQLPAD_ADMIN` / `SQLPAD_ADMIN_PASSWORD`: SQLPad admin credentials
 
-2. Start services:
+2. Start services (automatically when running a day):
+
+   You can simply run the lab for a given day and it will start services for that day automatically:
 
    ```sh
-   make up
+   make day-run DAY=8
    ```
 
-   This starts SQL Server (Developer) on `localhost:1433` and SQLPad at `http://localhost:3000`.
+   Or, if you prefer to start services explicitly for a specific day:
+
+   ```sh
+   make up DAY=8
+   ```
+
+   This starts SQL Server (Developer) on `localhost:1433` and SQLPad at `http://localhost:3000` using the lecture-specific Docker Compose file.
 
 3. Run a lab (example: Day 8):
 
@@ -42,7 +50,7 @@ Make sure you have the following installed:
    make day-run DAY=8
    ```
 
-   This executes all SQL files in `lectures/day_8/sql` inside the container.
+   This brings up the stack for Day 8 (if not already running) and executes all SQL files in `lectures/day_8/sql` inside the container.
 
 4. Connect via SQLPad (optional):
 
@@ -59,7 +67,7 @@ Make sure you have the following installed:
 
 ## 📂 Project Structure
 
-- `docker/`: Docker Compose for SQL Server and SQLPad
+- `lectures/day_*/docker/docker-compose.yml`: Lecture-specific Docker Compose for SQL Server and SQLPad
 - `lectures/day_8/`: Data warehousing lab
   - `data/`: CSVs mounted to the container at `/opt/workspace/lectures/day_8/data`
   - `sql/`: Executable SQL scripts
@@ -72,16 +80,16 @@ Make sure you have the following installed:
 
 - `make help`: List available commands
 - `make setup`: Create `.env` if missing
-- `make up`: Start SQL Server and SQLPad
-- `make down`: Stop services
-- `make clean`: Remove containers and volumes
-- `make day-run DAY=N`: Run all SQL files under `lectures/day_N/sql`
+- `make up DAY=N`: Start services using `lectures/day_N/docker/docker-compose.yml`
+- `make down DAY=N`: Stop services for `DAY=N`
+- `make clean DAY=N`: Remove containers and volumes for `DAY=N`
+- `make day-run DAY=N`: Bring up services for `DAY=N` and run SQL files under `lectures/day_N/sql`
 
 ---
 
 ## 🔎 Notes & Troubleshooting
 
-- The repo root is mounted to the container as `/opt/workspace` (see `docker/docker-compose.yml`).
+- The repo root is mounted to the container as `/opt/workspace` (via the lecture-specific compose file under `lectures/day_*/docker/docker-compose.yml`).
 - BULK INSERT paths in the SQL scripts point to this mount, e.g. `/opt/workspace/lectures/day_8/data/...`.
 - CSV newlines are expected as `\n`. If you are on Windows, ensure no `\r\n` issues.
 - For the events dataset (`day_8`): the CSV includes a leading `EventID` column with empty values so SQL Server auto-generates the identity. Do not remove this column.

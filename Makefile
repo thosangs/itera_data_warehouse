@@ -20,17 +20,32 @@ setup: ## Create .env with defaults if missing
 		echo ".env already exists; skipping."; \
 	fi
 
-up: ## Start SQL Server and SQLPad
-	@echo "Starting SQL Server and SQLPad..."
-	docker-compose -f docker/docker-compose.yml --env-file .env up -d
+up: ## Start services for a specific day (use: make up DAY=8)
+	@if [ -z "$(DAY)" ]; then echo "Please provide DAY, e.g. make up DAY=8" && exit 1; fi
+	@COMPOSE_FILE="lectures/day_$(DAY)/docker/docker-compose.yml"; \
+	if [ ! -f "$$COMPOSE_FILE" ]; then \
+	  echo "Compose file not found: $$COMPOSE_FILE" && exit 1; \
+	fi; \
+	echo "Starting services using $$COMPOSE_FILE..."; \
+	docker-compose -f "$$COMPOSE_FILE" --env-file .env up -d
 
-down: ## Stop services
-	@echo "Stopping services..."
-	docker-compose -f docker/docker-compose.yml --env-file .env down
+down: ## Stop services for a specific day (use: make down DAY=8)
+	@if [ -z "$(DAY)" ]; then echo "Please provide DAY, e.g. make down DAY=8" && exit 1; fi
+	@COMPOSE_FILE="lectures/day_$(DAY)/docker/docker-compose.yml"; \
+	if [ ! -f "$$COMPOSE_FILE" ]; then \
+	  echo "Compose file not found: $$COMPOSE_FILE" && exit 1; \
+	fi; \
+	echo "Stopping services using $$COMPOSE_FILE..."; \
+	docker-compose -f "$$COMPOSE_FILE" --env-file .env down
 
-clean: ## Remove containers, volumes, and orphans
-	@echo "Cleaning up Docker containers and volumes..."
-	docker-compose -f docker/docker-compose.yml --env-file .env down --volumes --remove-orphans
+clean: ## Remove containers, volumes, and orphans for a specific day (use: make clean DAY=8)
+	@if [ -z "$(DAY)" ]; then echo "Please provide DAY, e.g. make clean DAY=8" && exit 1; fi
+	@COMPOSE_FILE="lectures/day_$(DAY)/docker/docker-compose.yml"; \
+	if [ ! -f "$$COMPOSE_FILE" ]; then \
+	  echo "Compose file not found: $$COMPOSE_FILE" && exit 1; \
+	fi; \
+	echo "Cleaning up using $$COMPOSE_FILE..."; \
+	docker-compose -f "$$COMPOSE_FILE" --env-file .env down --volumes --remove-orphans
 
 # --- Labs: generic day runner ---
 # Usage: make day-run DAY=8
@@ -42,6 +57,11 @@ endef
 
 
 .PHONY: day-run
-day-run: ## Run all SQL files for a given day (DAY=8)
+day-run: ## Start services and run all SQL files for DAY (e.g., DAY=8)
 	@if [ -z "$(DAY)" ]; then echo "Please provide DAY, e.g. make day-run DAY=8" && exit 1; fi
+	@$(MAKE) up DAY=$(DAY)
+	@echo "Waiting for mssql to be healthy..."; \
+	until [ "$$(/usr/bin/env docker inspect -f '{{.State.Health.Status}}' mssql 2>/dev/null)" = "healthy" ]; do \
+	  sleep 2; printf "."; \
+	done; echo " mssql is healthy.";
 	@DAY=$(DAY) bash scripts/day-run.sh

@@ -12,7 +12,7 @@ services:
     volumes:
       - mssql_data:/var/opt/mssql
       - mssql_backup:/var/opt/mssql/backup
-      - ../:/opt/workspace
+      - ../../../:/opt/workspace
     healthcheck:
       test:
         [

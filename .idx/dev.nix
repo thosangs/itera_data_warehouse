@@ -21,6 +21,7 @@
     extensions = [
       # "vscodevim.vim"
       "ms-azuretools.vscode-docker"
+      "ReprEng.csv"
     ];
 
     # Enable previews

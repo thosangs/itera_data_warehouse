@@ -19,10 +19,10 @@ GO
 CREATE VIEW day8_dwh.Events_L2_UserWeek AS
 SELECT
   UserID,
-  DATEADD(day, -((DATEPART(weekday, CAST(EventTime AS DATE)) + @@DATEFIRST - 2) % 7), CAST(EventTime AS DATE)) AS WeekStart,
-  COUNT(*) AS NumEvents,
-  COUNT(DISTINCT EventName) AS NumEventTypes
-FROM day8_src.Events
+  DATEADD(day, -((DATEPART(weekday, EventDate) + @@DATEFIRST - 2) % 7), EventDate) AS WeekStart,
+  SUM(NumEvents) AS NumEvents,
+  SUM(NumEventTypes) AS NumEventTypes
+FROM day8_dwh.Events_L1_UserDay
 GROUP BY UserID,
-  DATEADD(day, -((DATEPART(weekday, CAST(EventTime AS DATE)) + @@DATEFIRST - 2) % 7), CAST(EventTime AS DATE));
+  DATEADD(day, -((DATEPART(weekday, EventDate) + @@DATEFIRST - 2) % 7), EventDate);
 GO

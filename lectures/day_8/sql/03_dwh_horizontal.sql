@@ -49,6 +49,6 @@ SELECT
   SUM(NumNewListings) AS NumNewListings,
   SUM(NumSold) AS NumSold,
   SUM(TotalSoldPrice) AS TotalSoldPrice
-FROM day8_dwh.Fact_Property
+FROM day8_dwh.Fact_Property_L1
 GROUP BY [Month];
 GO

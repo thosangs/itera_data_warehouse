@@ -15,6 +15,9 @@ setup: ## Create .env with defaults if missing
 		echo "DB_NAME=PracticeDB" >> .env; \
 		echo "SQLPAD_ADMIN=admin@example.com" >> .env; \
 		echo "SQLPAD_ADMIN_PASSWORD=changeme" >> .env; \
+		echo "AIRFLOW_CONTAINER_NAME=airflow" >> .env; \
+		echo "AIRFLOW_HOST_NAME=airflow" >> .env; \
+		echo "AIRFLOW_WEBSERVER_PORT=80" >> .env; \
 		echo ".env created. Please review and adjust as needed."; \
 	else \
 		echo ".env already exists; skipping."; \

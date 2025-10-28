@@ -6,7 +6,7 @@ from datetime import datetime
 import pandas as pd
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from airflow.providers.microsoft.mssql.hooks.mssql import MsSqlHook
+from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 RAW_DIR = "/opt/workspace/lectures/day_9/data/raw"
 
@@ -46,7 +46,7 @@ def extract_transform(csv_name: str) -> pd.DataFrame:
 
 
 def load_dw(table: str, df: pd.DataFrame) -> int:
-    hook = MsSqlHook(mssql_conn_id="mssql_default")
+    hook = PostgresHook(postgres_conn_id="postgres_default")
     if table == "customers":
         rows = [
             (
@@ -57,16 +57,14 @@ def load_dw(table: str, df: pd.DataFrame) -> int:
             )
             for r in df.itertuples(index=False)
         ]
-        # upsert via MERGE one by one (simple)
+        # upsert via INSERT ... ON CONFLICT one by one (simple)
         for row in rows:
             hook.run(
                 sql=(
-                    "MERGE dw.customers AS tgt USING "
-                    "(SELECT %(id)s AS customer_id, %(name)s AS name, %(city)s AS city, %(upd)s AS updated_at) AS src\n"
-                    "ON tgt.customer_id = src.customer_id\n"
-                    "WHEN MATCHED THEN UPDATE SET name = src.name, city = src.city, updated_at = src.updated_at, is_active = 1\n"
-                    "WHEN NOT MATCHED THEN INSERT (customer_id, name, city, is_active, updated_at) "
-                    "VALUES (src.customer_id, src.name, src.city, 1, src.updated_at);"
+                    "INSERT INTO dw.customers (customer_id, name, city, is_active, updated_at) "
+                    "VALUES (%(id)s, %(name)s, %(city)s, TRUE, %(upd)s) "
+                    "ON CONFLICT (customer_id) DO UPDATE SET "
+                    "name = EXCLUDED.name, city = EXCLUDED.city, updated_at = EXCLUDED.updated_at, is_active = TRUE;"
                 ),
                 parameters={
                     "id": row[0],
@@ -89,17 +87,11 @@ def load_dw(table: str, df: pd.DataFrame) -> int:
         for row in rows:
             hook.run(
                 sql=(
-                    "MERGE dw.orders AS tgt USING "
-                    "(SELECT %(id)s AS order_id, %(cid)s AS customer_id, %(amt)s AS amount, %(st)s AS status, %(upd)s AS updated_at) AS src\n"
-                    "ON tgt.order_id = src.order_id\n"
-                    "WHEN MATCHED THEN UPDATE SET "
-                    "customer_id = src.customer_id, "
-                    "amount = src.amount, "
-                    "status = src.status, "
-                    "updated_at = src.updated_at, "
-                    "is_active = 1\n"
-                    "WHEN NOT MATCHED THEN INSERT (order_id, customer_id, amount, status, is_active, updated_at) "
-                    "VALUES (src.order_id, src.customer_id, src.amount, src.status, 1, src.updated_at);"
+                    "INSERT INTO dw.orders (order_id, customer_id, amount, status, is_active, updated_at) "
+                    "VALUES (%(id)s, %(cid)s, %(amt)s, %(st)s, TRUE, %(upd)s) "
+                    "ON CONFLICT (order_id) DO UPDATE SET "
+                    "customer_id = EXCLUDED.customer_id, amount = EXCLUDED.amount, "
+                    "status = EXCLUDED.status, updated_at = EXCLUDED.updated_at, is_active = TRUE;"
                 ),
                 parameters={
                     "id": row[0],
@@ -113,7 +105,7 @@ def load_dw(table: str, df: pd.DataFrame) -> int:
 
 
 def end_checks() -> None:
-    hook = MsSqlHook(mssql_conn_id="mssql_default")
+    hook = PostgresHook(postgres_conn_id="postgres_default")
     res = hook.get_first("SELECT COUNT(*) FROM dw.orders")
     if not res or int(res[0]) <= 0:
         raise ValueError("dw.orders is empty after ETL")

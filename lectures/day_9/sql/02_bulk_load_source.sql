@@ -1,22 +1,8 @@
-SET NOCOUNT ON;
-
--- Bulk load CSVs into source schema
-BULK INSERT source.customers
+-- PostgreSQL bulk load using COPY
+COPY source.customers (customer_id, name, city, updated_at)
 FROM '/opt/workspace/lectures/day_9/data/raw/customers.csv'
-WITH (
-  FIRSTROW = 2,
-  FIELDTERMINATOR = ',',
-  ROWTERMINATOR = '0x0A',
-  TABLOCK
-);
+WITH (FORMAT csv, HEADER true);
 
-BULK INSERT source.orders
+COPY source.orders (order_id, customer_id, amount, status, updated_at)
 FROM '/opt/workspace/lectures/day_9/data/raw/orders.csv'
-WITH (
-  FIRSTROW = 2,
-  FIELDTERMINATOR = ',',
-  ROWTERMINATOR = '0x0A',
-  TABLOCK
-);
-
-
+WITH (FORMAT csv, HEADER true);

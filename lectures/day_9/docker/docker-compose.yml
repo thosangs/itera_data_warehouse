@@ -1,4 +1,64 @@
 services:
+  zookeeper:
+    image: quay.io/debezium/zookeeper:3.1
+    container_name: zookeeper
+    ports: ["2181:2181"]
+
+  kafka:
+    image: quay.io/debezium/kafka:3.1
+    container_name: kafka
+    ports: ["9092:9092", "29092:29092"]
+    depends_on: [zookeeper]
+    environment:
+      ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+
+  connect:
+    image: quay.io/debezium/connect:3.1
+    container_name: connect
+    depends_on: [kafka, postgres]
+    ports: ["8083:8083"]
+    environment:
+      BOOTSTRAP_SERVERS: kafka:9092
+      GROUP_ID: 1
+      CONFIG_STORAGE_TOPIC: connect_configs
+      OFFSET_STORAGE_TOPIC: connect_offsets
+      STATUS_STORAGE_TOPIC: connect_statuses
+      CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      STATUS_STORAGE_REPLICATION_FACTOR: 1
+      KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      KEY_CONVERTER_SCHEMAS_ENABLE: "false"
+      VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
+
+  postgres:
+    image: debezium/postgres:15
+    container_name: postgres
+    ports: ["5432:5432"]
+    command:
+      [
+        "postgres",
+        "-c",
+        "wal_level=logical",
+        "-c",
+        "max_wal_senders=10",
+        "-c",
+        "max_replication_slots=10",
+      ]
+    environment:
+      POSTGRES_USER: dbz
+      POSTGRES_PASSWORD: dbz
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - ../../../:/opt/workspace:ro
+
   airflow:
     platform: linux/amd64
     build:
@@ -10,8 +70,6 @@ services:
       - /bin/bash
       - /scripts/airflow_entrypoint.sh
     restart: always
-    environment:
-      - "AIRFLOW_CONN_MSSQL_DEFAULT=mssql+pyodbc://sa:${SA_PASSWORD}@mssql:1433/${DB_NAME}?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes"
     volumes:
       - ../dags:/opt/airflow/dags
       - ../scripts:/scripts
@@ -19,63 +77,12 @@ services:
     ports:
       - ${AIRFLOW_WEBSERVER_PORT}:8080
 
-  mssql:
-    platform: linux/amd64
-    image: mcr.microsoft.com/mssql/server:2022-CU14-ubuntu-22.04
-    container_name: mssql
-    environment:
-      - ACCEPT_EULA=Y
-      - SA_PASSWORD=${SA_PASSWORD}
-      - MSSQL_PID=Developer
-    ports:
-      - "1433:1433"
-    volumes:
-      - mssql_data:/var/opt/mssql
-      - mssql_backup:/var/opt/mssql/backup
-      - ../../../:/opt/workspace
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          '([ -x /opt/mssql-tools/bin/sqlcmd ] && /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "$SA_PASSWORD" -Q ''SELECT 1'') || ([ -x /opt/mssql-tools18/bin/sqlcmd ] && /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P "$SA_PASSWORD" -Q ''SELECT 1'')',
-        ]
-      interval: 5s
-      timeout: 5s
-      retries: 30
-
-  mssql-initdb:
-    image: mcr.microsoft.com/mssql/server:2022-CU14-ubuntu-22.04
-    platform: linux/amd64
-    depends_on:
-      mssql:
-        condition: service_healthy
-    environment:
-      - SA_PASSWORD=${SA_PASSWORD}
-      - DB_NAME=${DB_NAME}
-    entrypoint:
-      - /bin/bash
-      - -lc
-      - |
-        set -e
-        if [ -x /opt/mssql-tools18/bin/sqlcmd ]; then
-          SQLCMD="/opt/mssql-tools18/bin/sqlcmd -C"
-        elif [ -x /opt/mssql-tools/bin/sqlcmd ]; then
-          SQLCMD=/opt/mssql-tools/bin/sqlcmd
-        else
-          echo "sqlcmd not found" >&2; exit 1
-        fi
-        echo "Ensuring DB $$DB_NAME exists..."
-        $$SQLCMD -S mssql -U sa -P "$$SA_PASSWORD" -Q "IF DB_ID('$$DB_NAME') IS NULL CREATE DATABASE [$$DB_NAME];"
-    restart: "no"
-
   sqlpad:
     image: sqlpad/sqlpad:7.5.7
     container_name: sqlpad
     depends_on:
-      mssql:
-        condition: service_healthy
-      mssql-initdb:
-        condition: service_completed_successfully
+      postgres:
+        condition: service_started
     ports:
       - "3000:3000"
     environment:
@@ -83,15 +90,11 @@ services:
       - SQLPAD_ADMIN_PASSWORD=${SQLPAD_ADMIN_PASSWORD}
       - SQLPAD_APP_LOG_LEVEL=info
       - SQLPAD_WEB_LOG_LEVEL=warn
-      - SQLPAD_CONNECTIONS__mssql__name=${DB_NAME}
-      - SQLPAD_CONNECTIONS__mssql__driver=sqlserver
-      - SQLPAD_CONNECTIONS__mssql__host=mssql
-      - SQLPAD_CONNECTIONS__mssql__port=1433
-      - SQLPAD_CONNECTIONS__mssql__database=${DB_NAME}
-      - SQLPAD_CONNECTIONS__mssql__username=sa
-      - SQLPAD_CONNECTIONS__mssql__password=${SA_PASSWORD}
+      - SQLPAD_CONNECTIONS__pg__name=${DB_NAME}
+      - SQLPAD_CONNECTIONS__pg__driver=postgres
+      - SQLPAD_CONNECTIONS__pg__host=postgres
+      - SQLPAD_CONNECTIONS__pg__port=5432
+      - SQLPAD_CONNECTIONS__pg__database=${DB_NAME}
+      - SQLPAD_CONNECTIONS__pg__username=dbz
+      - SQLPAD_CONNECTIONS__pg__password=dbz
     restart: unless-stopped
-
-volumes:
-  mssql_data:
-  mssql_backup:

@@ -7,7 +7,7 @@ from datetime import datetime
 import pandas as pd
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from airflow.providers.microsoft.mssql.hooks.mssql import MsSqlHook
+from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.utils.task_group import TaskGroup
 
 RAW_DIR = "/opt/workspace/lectures/day_9/data/raw"
@@ -53,7 +53,7 @@ def load_to_staging(batch_id: str, table: str, csv_name: str) -> int:
         raise ValueError(table)
 
     df["batch_id"] = batch_id
-    hook = MsSqlHook(mssql_conn_id="mssql_default")
+    hook = PostgresHook(postgres_conn_id="postgres_default")
 
     if table == "customers":
         rows = [
@@ -116,15 +116,15 @@ def load_to_staging(batch_id: str, table: str, csv_name: str) -> int:
 
 
 def run_transforms(batch_id: str) -> None:
-    hook = MsSqlHook(mssql_conn_id="mssql_default")
-    sql_path = "/opt/workspace/lectures/day_9/sql/03_elt_transforms.sql"
+    hook = PostgresHook(postgres_conn_id="postgres_default")
+    sql_path = "/opt/workspace/lectures/day_9/sql/04_elt_transforms.sql"
     with open(sql_path, "r", encoding="utf-8") as f:
         sql = f.read()
     hook.run(sql=sql, parameters={"batch_id": batch_id})
 
 
 def end_checks() -> None:
-    hook = MsSqlHook(mssql_conn_id="mssql_default")
+    hook = PostgresHook(postgres_conn_id="postgres_default")
     res = hook.get_first("SELECT COUNT(*) FROM dw.customers")
     if not res or res[0] is None or int(res[0]) <= 0:
         raise ValueError("dw.customers is empty after ELT")

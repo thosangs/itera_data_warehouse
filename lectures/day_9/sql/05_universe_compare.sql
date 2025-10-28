@@ -1,13 +1,17 @@
-SET NOCOUNT ON;
-
-DECLARE @customers_src BIGINT = (SELECT COUNT(*) FROM source.customers);
-DECLARE @customers_dw BIGINT = (SELECT COUNT(*) FROM dw.customers WHERE is_active = 1);
-DECLARE @orders_src BIGINT = (SELECT COUNT(*) FROM source.orders);
-DECLARE @orders_dw BIGINT = (SELECT COUNT(*) FROM dw.orders WHERE is_active = 1);
-
+WITH counts AS (
+  SELECT 'customers' AS table_name,
+         (SELECT COUNT(*) FROM source.customers) AS source_count,
+         (SELECT COUNT(*) FROM dw.customers WHERE is_active = TRUE) AS dw_count
+  UNION ALL
+  SELECT 'orders' AS table_name,
+         (SELECT COUNT(*) FROM source.orders) AS source_count,
+         (SELECT COUNT(*) FROM dw.orders WHERE is_active = TRUE) AS dw_count
+)
 INSERT INTO metadata.universe_compare_log(table_name, source_count, dw_count, source_checksum, dw_checksum, status)
-VALUES
-('customers', @customers_src, @customers_dw, @customers_src, @customers_dw, CASE WHEN @customers_src = @customers_dw THEN 'OK' ELSE 'MISMATCH' END),
-('orders', @orders_src, @orders_dw, @orders_src, @orders_dw, CASE WHEN @orders_src = @orders_dw THEN 'OK' ELSE 'MISMATCH' END);
-
-
+SELECT table_name,
+       source_count,
+       dw_count,
+       source_count AS source_checksum,
+       dw_count AS dw_checksum,
+       CASE WHEN source_count = dw_count THEN 'OK' ELSE 'MISMATCH' END AS status
+FROM counts;

@@ -6,7 +6,7 @@ from datetime import datetime
 import pandas as pd
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from airflow.providers.microsoft.mssql.hooks.mssql import MsSqlHook
+from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.utils.task_group import TaskGroup
 
 RAW_DIR = "/opt/workspace/lectures/day_9/data/raw"
@@ -38,7 +38,7 @@ def profile_csv(
     df = pd.read_csv(path)
     actual_columns = list(df.columns)
     row_count = int(len(df))
-    hook = MsSqlHook(mssql_conn_id="mssql_default")
+    hook = PostgresHook(postgres_conn_id="postgres_default")
     hook.run(
         sql=(
             "INSERT INTO metadata.data_inventory(dataset_name, file_path, expected_columns, actual_columns, row_count) "

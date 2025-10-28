@@ -1,8 +1,5 @@
-SET NOCOUNT ON;
-
-IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = 'source') EXEC('CREATE SCHEMA source');
-IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = 'staging') EXEC('CREATE SCHEMA staging');
-IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = 'dw') EXEC('CREATE SCHEMA dw');
-IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = 'metadata') EXEC('CREATE SCHEMA metadata');
-
-
+-- PostgreSQL: ensure required schemas exist
+CREATE SCHEMA IF NOT EXISTS source;
+CREATE SCHEMA IF NOT EXISTS staging;
+CREATE SCHEMA IF NOT EXISTS dw;
+CREATE SCHEMA IF NOT EXISTS metadata;

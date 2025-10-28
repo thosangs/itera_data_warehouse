@@ -23,8 +23,8 @@ up: ## Start services for a specific day (use: make up DAY=8)
 	  echo "Compose file not found: $$COMPOSE_FILE" && exit 1; \
 	fi; \
 	echo "Starting services using $$COMPOSE_FILE..."; \
-	docker-compose -f "$$COMPOSE_FILE" --env-file .env up -d
-
+	docker-compose -f "$$COMPOSE_FILE" --env-file .env up --build -d
+	
 down: ## Stop services for a specific day (use: make down DAY=8)
 	@if [ -z "$(DAY)" ]; then echo "Please provide DAY, e.g. make down DAY=8" && exit 1; fi
 	@COMPOSE_FILE="lectures/day_$(DAY)/docker/docker-compose.yml"; \
@@ -56,8 +56,10 @@ endef
 day-run: ## Start services and run all SQL files for DAY (e.g., DAY=8)
 	@if [ -z "$(DAY)" ]; then echo "Please provide DAY, e.g. make day-run DAY=8" && exit 1; fi
 	@$(MAKE) up DAY=$(DAY)
-	@echo "Waiting for mssql to be healthy..."; \
-	until [ "$$(/usr/bin/env docker inspect -f '{{.State.Health.Status}}' mssql 2>/dev/null)" = "healthy" ]; do \
-	  sleep 2; printf "."; \
-	done; echo " mssql is healthy.";
-	@DAY=$(DAY) bash scripts/day-run.sh
+	@INIT_SCRIPT="lectures/day_$(DAY)/scripts/init.sh"; \
+	if [ -f "$$INIT_SCRIPT" ]; then \
+	  echo "Running per-day init: $$INIT_SCRIPT"; \
+	  ( cd "lectures/day_$(DAY)/scripts" && bash init.sh ); \
+	else \
+	  echo "No per-day init script found at $$INIT_SCRIPT; skipping."; \
+	fi

@@ -7,6 +7,10 @@ DROP TABLE IF EXISTS source.customers;
 DROP TABLE IF EXISTS staging.orders;
 DROP TABLE IF EXISTS staging.customers;
 
+-- Sink materialized tables
+DROP TABLE IF EXISTS staging.orders_cdc;
+DROP TABLE IF EXISTS staging.customers_cdc;
+
 DROP TABLE IF EXISTS dw.orders;
 DROP TABLE IF EXISTS dw.customers;
 

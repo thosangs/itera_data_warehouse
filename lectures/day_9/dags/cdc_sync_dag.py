@@ -132,63 +132,65 @@ def apply_cdc_changes(table_name: str) -> None:
         raise ValueError(table_name)
 
 
-def wait_for_stream(seconds: int = 15) -> None:
-    import time
-
-    time.sleep(int(seconds))
-
-
-def consume_cdc_and_log(max_messages: int = 50, timeout_s: int = 10) -> None:
-    # Consume Debezium events from Kafka and log to metadata.cdc_events
-    import json
-    import uuid
-
-    from kafka import KafkaConsumer
+def update_one_row(table_name: str) -> None:
+    # Update exactly one random row in source tables to emit CDC events
+    import random
+    from datetime import datetime, timezone
 
     hook = PostgresHook(postgres_conn_id="postgres_default")
-    dbname_row = hook.get_first("SELECT current_database()")
-    dbname = dbname_row[0] if dbname_row else "example"
 
-    topics = [f"{dbname}.source.customers", f"{dbname}.source.orders"]
-
-    consumer = KafkaConsumer(
-        *topics,
-        bootstrap_servers="kafka:9092",
-        group_id=f"airflow-cdc-logger-{uuid.uuid4()}",
-        auto_offset_reset="earliest",
-        enable_auto_commit=False,
-        value_deserializer=lambda v: json.loads(v.decode("utf-8")),
-        key_deserializer=lambda v: json.loads(v.decode("utf-8")) if v else None,
-        consumer_timeout_ms=int(timeout_s * 1000),
-    )
-
-    count = 0
-    for msg in consumer:
-        val = msg.value or {}
-        key = msg.key
-        op = val.get("op")
-        ts = val.get("ts_ms")
-
+    if table_name == "customers":
+        row = hook.get_first(
+            "SELECT customer_id FROM source.customers ORDER BY random() LIMIT 1"
+        )
+        if not row or row[0] is None:
+            return
+        customer_id = int(row[0])
+        cities = [
+            "Jakarta",
+            "Tokyo",
+            "Singapore",
+            "Sydney",
+            "Kuala Lumpur",
+            "Bangkok",
+            "Manila",
+            "Seoul",
+        ]
+        params = {
+            "id": customer_id,
+            "city": random.choice([c for c in cities]),
+            "updated_at": datetime.now(timezone.utc),
+        }
         hook.run(
             sql=(
-                "INSERT INTO metadata.cdc_events (topic, partition, event_offset, key, op, ts_ms, payload) "
-                "VALUES (%(t)s, %(p)s, %(o)s, %(k)s, %(op)s, %(ts)s, %(v)s) "
-                "ON CONFLICT (topic, partition, event_offset) DO NOTHING"
+                "UPDATE source.customers SET city = %(city)s, updated_at = %(updated_at)s "
+                "WHERE customer_id = %(id)s"
             ),
-            parameters={
-                "t": msg.topic,
-                "p": int(msg.partition),
-                "o": int(msg.offset),
-                "k": json.dumps(key) if key is not None else None,
-                "op": op,
-                "ts": ts,
-                "v": json.dumps(val),
-            },
+            parameters=params,
         )
-
-        count += 1
-        if count >= int(max_messages):
-            break
+    elif table_name == "orders":
+        row = hook.get_first(
+            "SELECT order_id FROM source.orders ORDER BY random() LIMIT 1"
+        )
+        if not row or row[0] is None:
+            return
+        order_id = int(row[0])
+        statuses = ["new", "processing", "shipped", "cancelled"]
+        params = {
+            "id": order_id,
+            "amt": round(random.uniform(10.0, 500.0), 2),
+            "status": random.choice(statuses),
+            "updated_at": datetime.now(timezone.utc),
+        }
+        hook.run(
+            sql=(
+                "UPDATE source.orders SET amount = %(amt)s, status = %(status)s, updated_at = %(updated_at)s "
+                "WHERE order_id = %(id)s"
+            ),
+            parameters=params,
+        )
+    else:
+        raise ValueError(table_name)
 
 
 with DAG(
@@ -214,16 +216,16 @@ with DAG(
         op_kwargs={"table_name": "orders"},
     )
 
-    t_wait = PythonOperator(
-        task_id="wait_for_stream",
-        python_callable=wait_for_stream,
-        op_kwargs={"seconds": 15},
+    t_update_customers = PythonOperator(
+        task_id="update_one_customer",
+        python_callable=update_one_row,
+        op_kwargs={"table_name": "customers"},
     )
 
-    t_consume = PythonOperator(
-        task_id="consume_cdc_and_log",
-        python_callable=consume_cdc_and_log,
-        op_kwargs={"max_messages": 50, "timeout_s": 10},
+    t_update_orders = PythonOperator(
+        task_id="update_one_order",
+        python_callable=update_one_row,
+        op_kwargs={"table_name": "orders"},
     )
 
-    t_enable >> [t_customers, t_orders] >> t_wait >> t_consume
+    t_enable >> [t_customers, t_orders] >> [t_update_customers, t_update_orders]

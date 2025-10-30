@@ -90,17 +90,18 @@ CREATE TABLE IF NOT EXISTS dw.orders (
   updated_at TIMESTAMPTZ NOT NULL
 );
 
--- CDC events log table (for capturing Debezium messages via Airflow consumer)
-CREATE TABLE IF NOT EXISTS metadata.cdc_events (
-  id BIGSERIAL PRIMARY KEY,
-  topic TEXT NOT NULL,
-  partition INT NOT NULL,
-  event_offset BIGINT NOT NULL,
-  key JSONB NULL,
-  op TEXT NULL,
-  ts_ms BIGINT NULL,
-  payload JSONB NOT NULL,
-  log_ts TIMESTAMPTZ NOT NULL DEFAULT NOW()
+-- JDBC sink targets (materialize unwrapped CDC rows)
+CREATE TABLE IF NOT EXISTS staging.customers_cdc (
+  customer_id INT PRIMARY KEY,
+  name TEXT NOT NULL,
+  city TEXT NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL
 );
-CREATE UNIQUE INDEX IF NOT EXISTS ux_cdc_events_pos
-  ON metadata.cdc_events(topic, partition, event_offset);
+
+CREATE TABLE IF NOT EXISTS staging.orders_cdc (
+  order_id INT PRIMARY KEY,
+  customer_id INT NOT NULL,
+  amount NUMERIC(10,2) NOT NULL,
+  status TEXT NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL
+);

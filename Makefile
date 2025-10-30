@@ -23,7 +23,7 @@ up: ## Start services for a specific day (use: make up DAY=8)
 	  echo "Compose file not found: $$COMPOSE_FILE" && exit 1; \
 	fi; \
 	echo "Starting services using $$COMPOSE_FILE..."; \
-	docker-compose -f "$$COMPOSE_FILE" --env-file .env up --build -d
+	docker-compose -f "$$COMPOSE_FILE" --env-file .env up -d
 	
 down: ## Stop services for a specific day (use: make down DAY=8)
 	@if [ -z "$(DAY)" ]; then echo "Please provide DAY, e.g. make down DAY=8" && exit 1; fi
@@ -54,6 +54,7 @@ endef
 
 .PHONY: day-run
 day-run: ## Start services and run all SQL files for DAY (e.g., DAY=8)
+	make setup
 	@if [ -z "$(DAY)" ]; then echo "Please provide DAY, e.g. make day-run DAY=8" && exit 1; fi
 	@$(MAKE) up DAY=$(DAY)
 	@INIT_SCRIPT="lectures/day_$(DAY)/scripts/init.sh"; \

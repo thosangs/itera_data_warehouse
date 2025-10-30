@@ -2,6 +2,15 @@
 airflow db init
 echo "AUTH_ROLE_PUBLIC = 'Admin'" >> webserver_config.py
 
+# Ensure Airflow connection to Postgres matches docker-compose credentials
+# Defaults DB_NAME to 'example' if not provided by compose env
+DB_NAME=${DB_NAME:-example}
+echo "configuring Airflow connection: postgres_default -> postgres:5432/${DB_NAME} (dbz)"
+# Remove if exists to avoid duplicates
+airflow connections delete postgres_default >/dev/null 2>&1 || true
+airflow connections add postgres_default \
+  --conn-uri "postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}"
+
 # Start the scheduler
 echo "starting scheduler on background"
 sh -c "airflow scheduler" &

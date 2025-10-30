@@ -143,8 +143,6 @@ with DAG(
 
     t_end = PythonOperator(task_id="end_checks", python_callable=end_checks)
 
-    (
-        [t_extract_customers, t_extract_orders]
-        >> [t_load_customers, t_load_orders]
-        >> t_end
-    )
+    t_extract_customers >> t_load_customers
+    t_extract_orders >> t_load_orders
+    [t_load_customers, t_load_orders] >> t_end

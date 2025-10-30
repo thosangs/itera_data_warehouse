@@ -11,3 +11,6 @@ DROP TABLE IF EXISTS dw.orders;
 DROP TABLE IF EXISTS dw.customers;
 
 
+-- CDC event log
+DROP TABLE IF EXISTS metadata.cdc_events;
+

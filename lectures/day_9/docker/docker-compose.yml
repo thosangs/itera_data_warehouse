@@ -69,6 +69,10 @@ services:
     entrypoint:
       - /bin/bash
       - /scripts/airflow_entrypoint.sh
+    environment:
+      POSTGRES_USER: dbz
+      POSTGRES_PASSWORD: dbz
+      POSTGRES_DB: ${DB_NAME}
     restart: always
     volumes:
       - ../dags:/opt/airflow/dags

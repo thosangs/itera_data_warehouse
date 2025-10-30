@@ -141,6 +141,7 @@ def wait_for_stream(seconds: int = 15) -> None:
 def consume_cdc_and_log(max_messages: int = 50, timeout_s: int = 10) -> None:
     # Consume Debezium events from Kafka and log to metadata.cdc_events
     import json
+    import uuid
 
     from kafka import KafkaConsumer
 
@@ -153,8 +154,8 @@ def consume_cdc_and_log(max_messages: int = 50, timeout_s: int = 10) -> None:
     consumer = KafkaConsumer(
         *topics,
         bootstrap_servers="kafka:9092",
-        group_id="airflow-cdc-logger",
-        auto_offset_reset="latest",
+        group_id=f"airflow-cdc-logger-{uuid.uuid4()}",
+        auto_offset_reset="earliest",
         enable_auto_commit=True,
         value_deserializer=lambda v: json.loads(v.decode("utf-8")),
         key_deserializer=lambda v: json.loads(v.decode("utf-8")) if v else None,

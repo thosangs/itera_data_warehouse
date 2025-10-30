@@ -170,9 +170,9 @@ def consume_cdc_and_log(max_messages: int = 50, timeout_s: int = 10) -> None:
 
         hook.run(
             sql=(
-                "INSERT INTO metadata.cdc_events (topic, partition, offset, key, op, ts_ms, payload) "
+                "INSERT INTO metadata.cdc_events (topic, partition, event_offset, key, op, ts_ms, payload) "
                 "VALUES (%(t)s, %(p)s, %(o)s, %(k)s, %(op)s, %(ts)s, %(v)s) "
-                "ON CONFLICT (topic, partition, offset) DO NOTHING"
+                "ON CONFLICT (topic, partition, event_offset) DO NOTHING"
             ),
             parameters={
                 "t": msg.topic,

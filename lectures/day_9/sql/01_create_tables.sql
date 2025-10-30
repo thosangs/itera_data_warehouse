@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS metadata.cdc_events (
   id BIGSERIAL PRIMARY KEY,
   topic TEXT NOT NULL,
   partition INT NOT NULL,
-  offset BIGINT NOT NULL,
+  event_offset BIGINT NOT NULL,
   key JSONB NULL,
   op TEXT NULL,
   ts_ms BIGINT NULL,
@@ -103,4 +103,4 @@ CREATE TABLE IF NOT EXISTS metadata.cdc_events (
   log_ts TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE UNIQUE INDEX IF NOT EXISTS ux_cdc_events_pos
-  ON metadata.cdc_events(topic, partition, offset);
+  ON metadata.cdc_events(topic, partition, event_offset);

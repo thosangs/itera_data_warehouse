@@ -117,7 +117,7 @@ def load_to_staging(batch_id: str, table: str, csv_name: str) -> int:
 
 def run_transforms(batch_id: str) -> None:
     hook = PostgresHook(postgres_conn_id="postgres_default")
-    sql_path = "/opt/workspace/lectures/day_9/sql/04_elt_transforms.sql"
+    sql_path = "/opt/workspace/lectures/day_9/scripts/04_elt_transforms.sql"
     with open(sql_path, "r", encoding="utf-8") as f:
         sql = f.read()
     hook.run(sql=sql, parameters={"batch_id": batch_id})

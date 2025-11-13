@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres
+    ports: ["5432:5432"]
+    environment:
+      POSTGRES_USER: dbz
+      POSTGRES_PASSWORD: dbz
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - ../../../:/opt/workspace:ro
+      - pgdata_day11:/var/lib/postgresql/data
+
+  sqlpad:
+    image: sqlpad/sqlpad:7.5.7
+    container_name: sqlpad
+    depends_on:
+      postgres:
+        condition: service_started
+    ports:
+      - "3000:3000"
+    environment:
+      - SQLPAD_ADMIN=${SQLPAD_ADMIN}
+      - SQLPAD_ADMIN_PASSWORD=${SQLPAD_ADMIN_PASSWORD}
+      - SQLPAD_APP_LOG_LEVEL=info
+      - SQLPAD_WEB_LOG_LEVEL=warn
+      - SQLPAD_CONNECTIONS__pg__name=${DB_NAME}
+      - SQLPAD_CONNECTIONS__pg__driver=postgres
+      - SQLPAD_CONNECTIONS__pg__host=postgres
+      - SQLPAD_CONNECTIONS__pg__port=5432
+      - SQLPAD_CONNECTIONS__pg__database=${DB_NAME}
+      - SQLPAD_CONNECTIONS__pg__username=dbz
+      - SQLPAD_CONNECTIONS__pg__password=dbz
+    restart: unless-stopped
+
+volumes:
+  pgdata_day11:

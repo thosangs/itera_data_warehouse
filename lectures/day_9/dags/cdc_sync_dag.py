@@ -21,8 +21,9 @@ def ensure_cdc_enabled() -> None:
 
 
 def apply_cdc_changes(table_name: str) -> None:
-    # Generate a brand-new random row and insert it into SOURCE tables
-    # so that Debezium emits CDC events. Each run inserts one new record.
+    # Generate a brand-new random row and insert it into SOURCE tables,
+    # then also update a random existing row so Debezium emits both
+    # INSERT and UPDATE CDC events each run.
     import random
     from datetime import datetime, timezone
 
@@ -74,6 +75,25 @@ def apply_cdc_changes(table_name: str) -> None:
             ),
             parameters=params,
         )
+
+        # Also update a random existing customer to trigger CDC UPDATE
+        update_id_row = hook.get_first(
+            "SELECT customer_id FROM source.customers ORDER BY random() LIMIT 1"
+        )
+        if update_id_row and update_id_row[0] is not None:
+            hook.run(
+                sql=(
+                    "UPDATE source.customers "
+                    "SET name = %(name2)s, city = %(city2)s, updated_at = %(updated_at)s "
+                    "WHERE customer_id = %(id)s;"
+                ),
+                parameters={
+                    "id": int(update_id_row[0]),
+                    "name2": f"{random.choice(names)} {random.randint(1000, 9999)}",
+                    "city2": random.choice(cities),
+                    "updated_at": datetime.now(timezone.utc),
+                },
+            )
 
     elif table_name == "orders":
         # Ensure we have at least one source customer to reference
@@ -128,6 +148,25 @@ def apply_cdc_changes(table_name: str) -> None:
             ),
             parameters=params,
         )
+
+        # Also update a random existing order to trigger CDC UPDATE
+        update_oid_row = hook.get_first(
+            "SELECT order_id FROM source.orders ORDER BY random() LIMIT 1"
+        )
+        if update_oid_row and update_oid_row[0] is not None:
+            hook.run(
+                sql=(
+                    "UPDATE source.orders "
+                    "SET amount = %(amt2)s, status = %(status2)s, updated_at = %(updated_at)s "
+                    "WHERE order_id = %(oid)s;"
+                ),
+                parameters={
+                    "oid": int(update_oid_row[0]),
+                    "amt2": round(random.uniform(10.0, 500.0), 2),
+                    "status2": random.choice(statuses),
+                    "updated_at": datetime.now(timezone.utc),
+                },
+            )
     else:
         raise ValueError(table_name)
 
@@ -166,14 +205,14 @@ def consume_cdc_and_log(max_messages: int = 50, timeout_s: int = 10) -> None:
     for msg in consumer:
         val = msg.value or {}
         key = msg.key
-        op = val.get("op")
-        ts = val.get("ts_ms")
+        op = val.get("payload").get("op")
+        ts = val.get("payload").get("ts_ms")
 
         hook.run(
             sql=(
-                "INSERT INTO metadata.cdc_events (topic, partition, offset, key, op, ts_ms, payload) "
+                "INSERT INTO metadata.cdc_events (topic, partition, event_offset, key, op, ts_ms, payload) "
                 "VALUES (%(t)s, %(p)s, %(o)s, %(k)s, %(op)s, %(ts)s, %(v)s) "
-                "ON CONFLICT (topic, partition, offset) DO NOTHING"
+                "ON CONFLICT (topic, partition, event_offset) DO NOTHING"
             ),
             parameters={
                 "t": msg.topic,
